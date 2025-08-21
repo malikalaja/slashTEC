@@ -57,6 +57,7 @@ test_result "Remote configured" "git remote get-url origin"
 # Phase 4: Docker Build Test
 echo -e "\n${YELLOW}🐳 PHASE 4: DOCKER BUILD TEST${NC}"
 echo "Building airport service..."
+ln -sf interview-test/airports-assembly-1.1.0.jar app.jar
 if docker build -f docker/Dockerfile -t test-airport:quick . >/dev/null 2>&1; then
     echo -e "${GREEN}✅ Airport Docker build - PASS${NC}"
     ((PASSED++))
@@ -66,6 +67,7 @@ else
 fi
 
 echo "Building country service..."
+ln -sf interview-test/countries-assembly-1.0.1.jar app.jar
 if docker build -f docker/Dockerfile.country -t test-country:quick . >/dev/null 2>&1; then
     echo -e "${GREEN}✅ Country Docker build - PASS${NC}"
     ((PASSED++))
@@ -73,6 +75,7 @@ else
     echo -e "${RED}❌ Country Docker build - FAIL${NC}"
     ((FAILED++))
 fi
+rm -f app.jar
 
 # Phase 5: Kubernetes Test
 echo -e "\n${YELLOW}⎈ PHASE 5: KUBERNETES TEST${NC}"
