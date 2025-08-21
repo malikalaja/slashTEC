@@ -1,6 +1,6 @@
 # Global configuration
 global:
-  namespace: "drone"
+  namespace: "preprod"
   imageRegistry: "malikslashtec"
   imagePullPolicy: Always
   

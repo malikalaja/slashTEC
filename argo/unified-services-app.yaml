@@ -11,6 +11,6 @@ spec:
     server: https://kubernetes.default.svc
   project: default
   source:
-    path: /helm-unified
+    path: helm-unified
     repoURL: https://github.com/malikalaja/slashTEC.git
     targetRevision: v1.0.0
