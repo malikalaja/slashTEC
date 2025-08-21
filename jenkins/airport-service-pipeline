@@ -9,7 +9,7 @@ def ecrUrl         = "${AWS_ACCOUNT_ID}.dkr.ecr.${awsRegion}.amazonaws.com"
 def dockerfile     = "docker/Dockerfile"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
 def ARGOCD_URL     = "${ARGOCD_SERVER_URL}" // URL of the ArgoCD server
-def JENKINS_URL    = "http://13.203.7.135/" // Jenkins server URL
+def JENKINS_URL    = "${JENKINS_SERVER_URL}" // Jenkins server URL (from environment)
 
 // AppConfig Params
 def applicationName = "airport-services"
