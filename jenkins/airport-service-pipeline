@@ -19,7 +19,7 @@ def clientId = "${applicationName}-${envName}"
 def latestTagValue = params.Tag
 def namespace = "preprod"
 def helmDir = "helm-unified"
-def slashtecDir = "."
+def slashtecDir = "slashtec"
 
 node {
   withCredentials([string(credentialsId: 'foodics-slack-online-deployments', variable: 'SLACK_WEBHOOK')]) {
@@ -30,7 +30,10 @@ node {
       }
       stage ("Get the app code") {
         checkout([$class: 'GitSCM', branches: [[name: "${branchName}"]] , extensions: [], userRemoteConfigs: [[ url: "${gitUrlCode}"]]])
-        sh("cp ${slashtecDir}/${dockerfile} Dockerfile")
+        sh "rm -rf ~/workspace/\"${JOB_NAME}\"/slashtec"
+        sh "mkdir ~/workspace/\"${JOB_NAME}\"/slashtec ; cd slashtec ; git clone -b main ${gitUrl} "
+        sh("cp ${slashtecDir}/docker/Dockerfile ${dockerfile}")
+        sh("cp -r ${slashtecDir}/docker/* .")
         sh("cp -r ${slashtecDir}/interview-test/*.jar .")
       }
       stage("Get the env variables from App") {
@@ -40,7 +43,7 @@ node {
         sh("aws ecr get-login-password --region ${awsRegion} | docker login --username AWS --password-stdin ${ecrUrl}")
       }
       stage('Build Docker Image') {
-        sh("docker build -t ${ecrUrl}/${serviceName}:${imageTag} -f Dockerfile .")
+        sh("docker build -t ${ecrUrl}/${serviceName}:${imageTag} -f ${dockerfile} .")
       }
       stage('Push Docker Image To ECR') {
         sh("docker push ${ecrUrl}/${serviceName}:${imageTag}")
