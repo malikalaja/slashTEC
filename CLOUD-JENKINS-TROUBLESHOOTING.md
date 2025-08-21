@@ -8,9 +8,15 @@ ERROR: Error response from daemon: login attempt failed
 ```
 **Solutions:**
 - ✅ Verify AWS credentials in Jenkins → Credentials  
+<<<<<<< HEAD
 - ✅ Check AWS account ID: `${AWS_ACCOUNT_ID}`
 - ✅ Confirm region: `ap-south-1`
 - ✅ Test AWS CLI: `aws ecr get-login-password --region ap-south-1`
+=======
+- ✅ Check AWS account ID: ``
+- ✅ Confirm region: `region`
+- ✅ Test AWS CLI: `aws ecr get-login-password --region ""`
+>>>>>>> 8121d196c7e00c19e383bafff676088fe47d7c5e
 
 ### 2. ECR Repository Not Found
 ```
