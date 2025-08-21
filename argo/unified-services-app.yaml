@@ -13,4 +13,4 @@ spec:
   source:
     path: /helm-unified
     repoURL: https://github.com/malikalaja/slashTEC.git
-    targetRevision: main
+    targetRevision: v1.0.0
