@@ -3,19 +3,17 @@ def gitUrl         = "https://github.com/malikalaja/slashTEC.git"
 def gitUrlCode     = "https://github.com/malikalaja/slashTEC.git"
 def serviceName    = "airport-service"
 def EnvName        = "preprod"
-def registryId     = "${AWS_ACCOUNT_ID}" // AWS ECR registry ID
+def registryId     = "${AWS_ACCOUNT_ID}"
 def awsRegion      = "ap-south-1"
 def ecrUrl         = "${AWS_ACCOUNT_ID}.dkr.ecr.${awsRegion}.amazonaws.com"
 def dockerfile     = "docker/Dockerfile"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
-def ARGOCD_URL     = "${ARGOCD_SERVER_URL}" // URL of the ArgoCD server
-def JENKINS_URL    = "${JENKINS_SERVER_URL}" // Jenkins server URL (from environment)
+def ARGOCD_URL     = "${ARGOCD_SERVER_URL}"
+def JENKINS_URL    = "${JENKINS_SERVER_URL}"
 
-// AppConfig Params
 def applicationName = "airport-services"
 def envName = "preprod"
 def configName = "preprod"
-// Fix: Use string concatenation, not arithmetic
 def clientId = "${applicationName}-${envName}"
 def latestTagValue = params.Tag
 def namespace = "preprod"
@@ -64,8 +62,6 @@ node {
       stage ("Deploy preprod-solo-crons to ${EnvName} Environment") {
         build job: 'preprod-solo-crons', wait: true
       }
-
-      // The ArgoCD stages remain commented, as in your code
 
     } catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
       currentBuild.result = "ABORTED"
