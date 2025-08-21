@@ -1,5 +1,7 @@
-# Multi-stage Dockerfile for Airport Service
-FROM openjdk:8-jre-alpine3.9 AS runtime
+FROM eclipse-temurin:8-jre-alpine
+
+# Install curl for health check
+RUN apk add --no-cache curl
 
 # Set working directory
 WORKDIR /app
@@ -20,7 +22,12 @@ EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1
+    CMD curl --fail http://localhost:8080/health/live || exit 1
 
-# Run the application
-ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/airport-service.jar"]
+# Add metadata labels
+LABEL maintainer="Malik <malik@example.com>"
+LABEL version="1.0.1-1-abc123"
+LABEL description="Airport Service Application"
+
+# Run the application with JVM options
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-Xms256m", "-Xmx512m", "-jar", "/app/airport-service.jar"]
