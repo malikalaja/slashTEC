@@ -1,290 +1,70 @@
 def branchName     = params.BranchName ?: "main"
 def gitUrl         = "https://github.com/malikalaja/slashTEC.git"
 def gitUrlCode     = "https://github.com/malikalaja/slashTEC.git"
-def serviceName    = params.ServiceName ?: "airport-service"
-def EnvName        = params.Environment ?: "production"
-def registryId     = "malikslashtec" // Docker Hub username
+def serviceName    = "airport-service"
+def EnvName        = "preprod"
+def registryId     = "727245885999" // AWS ECR registry ID
 def awsRegion      = "ap-south-1"
-def ecrUrl         = "index.docker.io/v1/" // Docker Hub registry
+def ecrUrl         = "727245885999.dkr.ecr.ap-south-1.amazonaws.com"
 def dockerfile     = "docker/Dockerfile"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
-def ARGOCD_URL     = "http://localhost:8080"
+def ARGOCD_URL     = "https://argocd-preprod.login.foodics.online" // URL of the ArgoCD server
 
-// Service Configuration
-def applicationName = "slashtec-airport-services"
-def envName = EnvName.toLowerCase()
-def configName = envName
+// AppConfig Params
+def applicationName = "airport-services"
+def envName = "preprod"
+def configName = "preprod"
+// Fix: Use string concatenation, not arithmetic
 def clientId = "${applicationName}-${envName}"
 def latestTagValue = params.Tag
-def namespace = "drone"
+def namespace = "preprod"
 def helmDir = "helm-unified"
-def airportVersion = params.AirportVersion ?: "1.1.0"
-
-// Notification function
-def notifyBuild(String buildStatus = 'STARTED') {
-    // Build status of null means successful
-    buildStatus = buildStatus ?: 'SUCCESS'
-    
-    def colorCode = ''
-    def subject = ''
-    def summary = ''
-    
-    // Override default values based on build status
-    if (buildStatus == 'STARTED') {
-        colorCode = '#FFFF00'
-        subject = "🚀 STARTED: Airport Service Pipeline"
-        summary = "${subject} - ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-    } else if (buildStatus == 'SUCCESS') {
-        colorCode = '#00FF00'
-        subject = "✅ SUCCESS: Airport Service Deployed"
-        summary = "${subject} - ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-    } else {
-        colorCode = '#FF0000'
-        subject = "❌ FAILED: Airport Service Pipeline"
-        summary = "${subject} - ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-    }
-    
-    // Send Slack notification if webhook is configured
-    try {
-        if (env.SLACK_WEBHOOK) {
-            slackSend(
-                channel: '#deployments',
-                color: colorCode,
-                message: summary
-            )
-        }
-    } catch (Exception e) {
-        echo "Slack notification failed: ${e.getMessage()}"
-    }
-}
+def slashtecDir = "."
 
 node {
-    withCredentials([
-        string(credentialsId: 'slack-webhook', variable: 'SLACK_WEBHOOK'),
-        usernamePassword(credentialsId: 'dockerhub-credentials', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS'),
-        usernamePassword(credentialsId: 'git-credentials', usernameVariable: 'GIT_USER', passwordVariable: 'GIT_PASS')
-    ]) {
-        try {
-            notifyBuild('STARTED')
-            
-            stage('Cleanup Workspace') {
-                cleanWs()
-                echo "🧹 Workspace cleaned"
-            }
-            
-            stage("Checkout Source Code") {
-                echo "📥 Checking out source code from ${branchName}"
-                checkout([
-                    $class: 'GitSCM',
-                    branches: [[name: "${branchName}"]],
-                    extensions: [],
-                    userRemoteConfigs: [[url: "${gitUrlCode}"]]
-                ])
-                
-                script {
-                    env.GIT_COMMIT_HASH = sh(
-                        script: 'git rev-parse --short HEAD',
-                        returnStdout: true
-                    ).trim()
-                    env.FULL_IMAGE_TAG = "${airportVersion}-${imageTag}-${env.GIT_COMMIT_HASH}"
-                }
-                
-                echo "📋 Commit: ${env.GIT_COMMIT_HASH}"
-                echo "🏷️  Image Tag: ${env.FULL_IMAGE_TAG}"
-            }
-            
-            stage("Prepare Build Artifacts") {
-                echo "📦 Preparing JAR files for build"
-                sh """
-                    # List available JAR files
-                    ls -la interview-test/*.jar
-                    
-                    # Copy the correct JAR file based on service and version
-                    if [ "${serviceName}" == "airport-service" ]; then
-                        cp interview-test/airports-assembly-${airportVersion}.jar docker/app.jar
-                        echo "✈️  Using airport service JAR: airports-assembly-${airportVersion}.jar"
-                    elif [ "${serviceName}" == "country-service" ]; then
-                        cp interview-test/countries-assembly-1.0.1.jar docker/app.jar
-                        echo "🌍 Using country service JAR: countries-assembly-1.0.1.jar"
-                    fi
-                    
-                    # Verify the JAR file
-                    ls -la docker/app.jar
-                """
-            }
-            
-            stage("Test Application Health") {
-                echo "🔍 Testing application health"
-                sh """
-                    echo "Starting ${serviceName} for health check..."
-                    
-                    # Start the service in background for testing
-                    timeout 45s java -jar docker/app.jar &
-                    SERVICE_PID=\$!
-                    
-                    # Wait for service to start
-                    echo "Waiting for service to start..."
-                    sleep 15
-                    
-                    # Health check
-                    for i in {1..10}; do
-                        if curl -f http://localhost:8080/health/live; then
-                            echo "✅ Health check passed on attempt \$i"
-                            kill \$SERVICE_PID || true
-                            exit 0
-                        fi
-                        echo "⏳ Health check attempt \$i failed, retrying..."
-                        sleep 3
-                    done
-                    
-                    echo "❌ Health check failed after 10 attempts"
-                    kill \$SERVICE_PID || true
-                    exit 1
-                """
-            }
-            
-            stage('Docker Registry Login') {
-                echo "🔐 Logging into Docker registry"
-                sh """
-                    echo "\$DOCKER_PASS" | docker login --username "\$DOCKER_USER" --password-stdin
-                """
-            }
-            
-            stage('Build Docker Image') {
-                echo "🐳 Building Docker image"
-                script {
-                    def dockerFile = serviceName == "airport-service" ? "docker/Dockerfile" : "docker/Dockerfile.country"
-                    env.DOCKER_IMAGE = "${registryId}/${serviceName}:${env.FULL_IMAGE_TAG}"
-                    
-                    sh """
-                        docker build -t ${env.DOCKER_IMAGE} -f ${dockerFile} docker/
-                        docker tag ${env.DOCKER_IMAGE} ${registryId}/${serviceName}:latest
-                        echo "🏷️  Built: ${env.DOCKER_IMAGE}"
-                    """
-                }
-            }
-            
-            stage('Push Docker Image') {
-                echo "📤 Pushing Docker image to registry"
-                sh """
-                    docker push ${env.DOCKER_IMAGE}
-                    docker push ${registryId}/${serviceName}:latest
-                    echo "✅ Pushed: ${env.DOCKER_IMAGE}"
-                """
-            }
-            
-            stage('Clean Local Docker Images') {
-                echo "🧹 Cleaning local Docker images"
-                sh """
-                    docker rmi -f ${env.DOCKER_IMAGE} || true
-                    docker rmi -f ${registryId}/${serviceName}:latest || true
-                    docker system prune -f || true
-                """
-            }
-            
-            stage("Update Helm Chart Values") {
-                echo "⚙️  Updating Helm chart with new image tag"
-                sh """
-                    cd ${helmDir}
-                    
-                    # Backup current values
-                    cp values.yaml values.yaml.backup
-                    
-                    # Update the appropriate service image tag using yq
-                    if [ "${serviceName}" == "airport-service" ]; then
-                        pathEnv=".airportService.image.tag"
-                        valueEnv="${env.FULL_IMAGE_TAG}"
-                        yq eval "\\${pathEnv} = \\"\\${valueEnv}\\"" -i values.yaml
-                    elif [ "${serviceName}" == "country-service" ]; then
-                        pathEnv=".countryService.image.tag"
-                        valueEnv="${env.FULL_IMAGE_TAG}"
-                        yq eval "\\${pathEnv} = \\"\\${valueEnv}\\"" -i values.yaml
-                    fi
-                    
-                    echo "📋 Updated values.yaml:"
-                    cat values.yaml
-                """
-            }
-            
-            stage("Commit and Push Changes") {
-                echo "📝 Committing updated manifests to Git"
-                sh """
-                    cd ${helmDir}
-                    
-                    # Configure git
-                    git config user.email "jenkins@slashtec.com"
-                    git config user.name "Jenkins CI/CD"
-                    
-                    # Add and commit changes
-                    git add values.yaml
-                    
-                    if git diff --staged --quiet; then
-                        echo "ℹ️  No changes to commit"
-                    else
-                        git commit -m "🚀 Update ${serviceName} to ${env.FULL_IMAGE_TAG} [skip ci]"
-                        
-                        # Push changes
-                        git push https://${GIT_USER}:${GIT_PASS}@github.com/malikalaja/slashTEC.git ${branchName}
-                        echo "✅ Changes pushed to repository"
-                    fi
-                """
-            }
-            
-            stage("Trigger Related Services") {
-                if (serviceName == "airport-service") {
-                    echo "🔗 Triggering related service deployments"
-                    
-                    // Trigger country service if needed
-                    try {
-                        build job: 'country-service-pipeline', 
-                              parameters: [
-                                  string(name: 'BranchName', value: branchName),
-                                  string(name: 'Environment', value: EnvName),
-                                  string(name: 'ServiceName', value: 'country-service')
-                              ],
-                              wait: true
-                        echo "✅ Country service deployment triggered successfully"
-                    } catch (Exception e) {
-                        echo "⚠️  Country service deployment trigger failed: ${e.getMessage()}"
-                        // Don't fail the main pipeline if related service fails
-                    }
-                }
-            }
-            
-            stage("Verify ArgoCD Sync") {
-                echo "🔄 ArgoCD will automatically sync the changes"
-                echo """
-                📊 Deployment Summary:
-                ==================
-                🏷️  Service: ${serviceName}
-                📦 Image: ${env.DOCKER_IMAGE}
-                🌍 Environment: ${EnvName}
-                📂 Namespace: ${namespace}
-                🔄 ArgoCD URL: ${ARGOCD_URL}
-                📋 Git Commit: ${env.GIT_COMMIT_HASH}
-                """
-            }
-            
-        } catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
-            currentBuild.result = "ABORTED"
-            echo "⏹️  Build aborted by user: ${e.getMessage()}"
-        } catch (Exception e) {
-            currentBuild.result = "FAILED"
-            echo "❌ Pipeline failed!"
-            echo "Exception type: ${e.getClass().getName()}"
-            echo "Exception message: ${e.getMessage() ?: 'No message'}"
-            throw e
-        } finally {
-            // Always send notification regardless of outcome
-            notifyBuild(currentBuild.result)
-            
-            // Archive important artifacts
-            try {
-                archiveArtifacts artifacts: 'helm-unified/values.yaml*', allowEmptyArchive: true
-                echo "📁 Artifacts archived successfully"
-            } catch (Exception e) {
-                echo "⚠️  Failed to archive artifacts: ${e.getMessage()}"
-            }
-        }
+  withCredentials([string(credentialsId: 'foodics-slack-online-deployments', variable: 'SLACK_WEBHOOK')]) {
+    try {
+      notifyBuild('STARTED')
+      stage('cleanup') {
+        cleanWs()
+      }
+      stage ("Get the app code") {
+        checkout([$class: 'GitSCM', branches: [[name: "${branchName}"]] , extensions: [], userRemoteConfigs: [[ url: "${gitUrlCode}"]]])
+        sh("cp ${slashtecDir}/${dockerfile} Dockerfile")
+        sh("cp -r ${slashtecDir}/interview-test/*.jar .")
+      }
+      stage("Get the env variables from App") {
+        sh "aws appconfig get-configuration --application ${applicationName} --environment ${envName} --configuration ${configName} --client-id ${clientId} .env --region ${awsRegion}"
+      }
+      stage('login to ecr') {
+        sh("aws ecr get-login-password --region ${awsRegion} | docker login --username AWS --password-stdin ${ecrUrl}")
+      }
+      stage('Build Docker Image') {
+        sh("docker build -t ${ecrUrl}/${serviceName}:${imageTag} -f Dockerfile .")
+      }
+      stage('Push Docker Image To ECR') {
+        sh("docker push ${ecrUrl}/${serviceName}:${imageTag}")
+      }
+      stage('Clean docker images') {
+        sh("docker rmi -f ${ecrUrl}/${serviceName}:${imageTag} || :")
+      }
+      stage ("Deploy ${serviceName} to ${EnvName} Environment") {
+        sh ("cd ${helmDir}; pathEnv=\".airportService.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
+        sh ("cd ${helmDir}; git pull ; git add values.yaml; git commit -m 'update airport-service image tag' ;git push ${gitUrl}")
+      }
+
+      // The ArgoCD stages remain commented, as in your code
+
+    } catch (org.jenkinsci.plugins.workflow.steps.FlowInterruptedException e) {
+      currentBuild.result = "ABORTED"
+      echo "Build aborted: ${e}"
+    } catch (Exception e) {
+      currentBuild.result = "FAILED"
+      echo "Exception type: ${e.getClass().getName()}"
+      echo "Exception message: ${e.message ?: 'No message'}"
+      throw e
+    } finally {
+      notifyBuild(currentBuild.result)
     }
+  }
 }
