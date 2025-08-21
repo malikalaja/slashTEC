@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.airportService.name }}
-  namespace: {{ .Values.global.namespace }}
   labels:
     app: {{ .Values.airportService.name }}
     service: airport

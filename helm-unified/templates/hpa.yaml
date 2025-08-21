@@ -4,7 +4,6 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ .Values.airportService.name }}-hpa
-  namespace: {{ .Values.global.namespace }}
   labels:
     app: {{ .Values.airportService.name }}
     service: airport
@@ -33,7 +32,6 @@ apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
   name: {{ .Values.countryService.name }}-hpa
-  namespace: {{ .Values.global.namespace }}
   labels:
     app: {{ .Values.countryService.name }}
     service: country

@@ -3,7 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Values.countryService.name }}
-  namespace: {{ .Values.global.namespace }}
   labels:
     app: {{ .Values.countryService.name }}
     service: country
