@@ -1,0 +1,55 @@
+{{- if .Values.airportService.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.airportService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.airportService.name }}
+    service: airport
+    chart: {{ include "slashtec-airport-services.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.airportService.service.type }}
+  ports:
+    - port: {{ .Values.airportService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      {{- if and (eq .Values.airportService.service.type "NodePort") .Values.airportService.service.nodePort }}
+      nodePort: {{ .Values.airportService.service.nodePort }}
+      {{- end }}
+  selector:
+    app: {{ .Values.airportService.name }}
+    release: {{ .Release.Name }}
+{{- end }}
+
+{{- if .Values.countryService.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.countryService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.countryService.name }}
+    service: country
+    chart: {{ include "slashtec-airport-services.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.countryService.service.type }}
+  ports:
+    - port: {{ .Values.countryService.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+      {{- if and (eq .Values.countryService.service.type "NodePort") .Values.countryService.service.nodePort }}
+      nodePort: {{ .Values.countryService.service.nodePort }}
+      {{- end }}
+  selector:
+    app: {{ .Values.countryService.name }}
+    release: {{ .Release.Name }}
+{{- end }}

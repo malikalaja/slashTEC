@@ -1,0 +1,26 @@
+# Dockerfile for Country Service
+FROM openjdk:8-jre-alpine3.9 AS runtime
+
+# Set working directory
+WORKDIR /app
+
+# Copy the application JAR
+COPY app.jar /app/country-service.jar
+
+# Create non-root user for security
+RUN addgroup -g 1000 appuser && \
+    adduser -D -s /bin/sh -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose the application port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1
+
+# Run the application
+ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-jar", "/app/country-service.jar"]

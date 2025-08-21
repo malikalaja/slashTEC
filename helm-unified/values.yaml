@@ -1,0 +1,100 @@
+# Global configuration
+global:
+  namespace: "drone"
+  imageRegistry: "malikslashtec"
+  imagePullPolicy: Always
+  
+# Airport Service Configuration
+airportService:
+  enabled: true
+  name: airport-service
+  replicaCount: 1
+  
+  image:
+    repository: malikslashtec/airport-service
+    tag: "1.0.1-1-abc123"
+    pullPolicy: Always
+  
+  service:
+    type: NodePort
+    port: 8000
+    targetPort: 8080
+    nodePort: 30618
+  
+  container:
+    port: 8080
+    
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200m
+    limits:
+      cpu: 500m
+      memory: 512m
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    
+  healthCheck:
+    path: "/health/live"
+    port: 8080
+    
+  podAnnotations:
+    linkerd.io/inject: disabled
+
+# Country Service Configuration    
+countryService:
+  enabled: true
+  name: country-service
+  replicaCount: 1
+  
+  image:
+    repository: malikslashtec/country-service
+    tag: "1.0.1-1-abc123"
+    pullPolicy: Always
+  
+  service:
+    type: NodePort
+    port: 8001
+    targetPort: 8080
+    nodePort: 30619
+  
+  container:
+    port: 8080
+    
+  resources:
+    requests:
+      cpu: 100m
+      memory: 200m
+    limits:
+      cpu: 500m
+      memory: 512m
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+    maxReplicas: 3
+    targetCPUUtilizationPercentage: 80
+    
+  healthCheck:
+    path: "/health/live"
+    port: 8080
+    
+  podAnnotations:
+    linkerd.io/inject: disabled
+
+# Ingress configuration disabled to reduce complexity
+ingress:
+  enabled: false
+
+# Security context
+podSecurityContext: {}
+securityContext: {}
+
+# Node selector and tolerations
+nodeSelector: {}
+tolerations: []
+affinity: {}

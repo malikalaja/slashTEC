@@ -1,0 +1,83 @@
+{{- if .Values.airportService.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.airportService.name }}
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.airportService.name }}
+    service: airport
+    chart: {{ include "slashtec-airport-services.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  {{- if not .Values.airportService.autoscaling.enabled }}
+  replicas: {{ .Values.airportService.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      app: {{ .Values.airportService.name }}
+      release: {{ .Release.Name }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.airportService.name }}
+        service: airport
+        release: {{ .Release.Name }}
+      {{- with .Values.airportService.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- with .Values.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Values.airportService.name }}
+        image: "{{ .Values.airportService.image.repository }}:{{ .Values.airportService.image.tag }}"
+        imagePullPolicy: {{ .Values.airportService.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.airportService.container.port }}
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.airportService.healthCheck.path }}
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.airportService.healthCheck.path }}
+            port: http
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          {{- toYaml .Values.airportService.resources | nindent 12 }}
+        {{- with .Values.securityContext }}
+        securityContext:
+          {{- toYaml . | nindent 12 }}
+        {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

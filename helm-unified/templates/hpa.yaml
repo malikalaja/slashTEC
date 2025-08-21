@@ -1,0 +1,57 @@
+{{- if and .Values.airportService.enabled .Values.airportService.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.airportService.name }}-hpa
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.airportService.name }}
+    service: airport
+    chart: {{ include "slashtec-airport-services.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.airportService.name }}
+  minReplicas: {{ .Values.airportService.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.airportService.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.airportService.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
+
+{{- if and .Values.countryService.enabled .Values.countryService.autoscaling.enabled }}
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.countryService.name }}-hpa
+  namespace: {{ .Values.global.namespace }}
+  labels:
+    app: {{ .Values.countryService.name }}
+    service: country
+    chart: {{ include "slashtec-airport-services.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ .Values.countryService.name }}
+  minReplicas: {{ .Values.countryService.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.countryService.autoscaling.maxReplicas }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.countryService.autoscaling.targetCPUUtilizationPercentage }}
+{{- end }}
