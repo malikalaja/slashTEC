@@ -1,0 +1,37 @@
+# Security - Never commit sensitive information
+.env
+*.env.local
+*.env.production
+
+# AWS
+.aws/
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.crt
+
+# Jenkins
+jenkins_home/
+
+# Kubernetes
+kubeconfig*
+
+# Backup files  
+*.bak
+*.backup
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

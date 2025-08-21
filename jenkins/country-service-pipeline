@@ -3,12 +3,12 @@ def gitUrl         = "https://github.com/malikalaja/slashTEC.git"
 def gitUrlCode     = "https://github.com/malikalaja/slashTEC.git"
 def serviceName    = "country-service"
 def EnvName        = "preprod"
-def registryId     = "727245885999" // AWS ECR registry ID
+def registryId     = "${AWS_ACCOUNT_ID}" // AWS ECR registry ID
 def awsRegion      = "ap-south-1"
-def ecrUrl         = "727245885999.dkr.ecr.ap-south-1.amazonaws.com"
+def ecrUrl         = "${AWS_ACCOUNT_ID}.dkr.ecr.${awsRegion}.amazonaws.com"
 def dockerfile     = "docker/Dockerfile.country"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
-def ARGOCD_URL     = "https://argocd-preprod.login.foodics.online" // URL of the ArgoCD server
+def ARGOCD_URL     = "${ARGOCD_SERVER_URL}" // URL of the ArgoCD server
 
 // AppConfig Params
 def applicationName = "airport-services"
@@ -22,7 +22,7 @@ def helmDir = "helm-unified"
 def slashtecDir = "slashtec"
 
 node {
-  withCredentials([string(credentialsId: 'foodics-slack-online-deployments', variable: 'SLACK_WEBHOOK')]) {
+  withCredentials([string(credentialsId: 'slack-webhook-credentials', variable: 'SLACK_WEBHOOK')]) {
     try {
       notifyBuild('STARTED')
       stage('cleanup') {

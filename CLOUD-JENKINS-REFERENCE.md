@@ -5,14 +5,14 @@
 GitHub Repo: https://github.com/malikalaja/slashTEC.git
 Airport Pipeline: jenkins/airport-service-pipeline  
 Country Pipeline: jenkins/country-service-pipeline
-ECR Registry: 727245885999.dkr.ecr.ap-south-1.amazonaws.com
+ECR Registry: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com
 ArgoCD App: preprod-airport-services
 ```
 
 ## 🔑 Required Credentials
 ```
 Jenkins Credential ID: aws-ecr-credentials
-AWS Account ID: 727245885999
+AWS Account ID: ${AWS_ACCOUNT_ID}
 AWS Region: ap-south-1  
 ECR Repositories: airport-service, country-service
 ```
@@ -24,7 +24,7 @@ ECR Repositories: airport-service, country-service
 Name: airport-service-pipeline
 Script Path: jenkins/airport-service-pipeline
 Service Name: airport-service
-Docker Image: 727245885999.dkr.ecr.ap-south-1.amazonaws.com/airport-service
+Docker Image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/airport-service
 ```
 
 ### Country Service Pipeline  
@@ -32,7 +32,7 @@ Docker Image: 727245885999.dkr.ecr.ap-south-1.amazonaws.com/airport-service
 Name: country-service-pipeline
 Script Path: jenkins/country-service-pipeline
 Service Name: country-service
-Docker Image: 727245885999.dkr.ecr.ap-south-1.amazonaws.com/country-service
+Docker Image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/country-service
 ```
 
 ## 📋 Build Parameters

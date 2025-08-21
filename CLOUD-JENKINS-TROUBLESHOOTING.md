@@ -8,7 +8,7 @@ ERROR: Error response from daemon: login attempt failed
 ```
 **Solutions:**
 - ✅ Verify AWS credentials in Jenkins → Credentials  
-- ✅ Check AWS account ID: `727245885999`
+- ✅ Check AWS account ID: `${AWS_ACCOUNT_ID}`
 - ✅ Confirm region: `ap-south-1`
 - ✅ Test AWS CLI: `aws ecr get-login-password --region ap-south-1`
 
