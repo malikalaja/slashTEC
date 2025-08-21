@@ -5,22 +5,14 @@
 GitHub Repo: https://github.com/malikalaja/slashTEC.git
 Airport Pipeline: jenkins/airport-service-pipeline  
 Country Pipeline: jenkins/country-service-pipeline
-<<<<<<< HEAD
-ECR Registry: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com
-=======
-ECR Registry: amazonId.dkr.ecr.regin.amazonaws.com
->>>>>>> 8121d196c7e00c19e383bafff676088fe47d7c5e
+ECR Registry: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com
 ArgoCD App: preprod-airport-services
 ```
 
 ## 🔑 Required Credentials
 ```
 Jenkins Credential ID: aws-ecr-credentials
-<<<<<<< HEAD
 AWS Account ID: ${AWS_ACCOUNT_ID}
-=======
-AWS Account ID: ##########
->>>>>>> 8121d196c7e00c19e383bafff676088fe47d7c5e
 AWS Region: ap-south-1  
 ECR Repositories: airport-service, country-service
 ```
@@ -32,11 +24,7 @@ ECR Repositories: airport-service, country-service
 Name: airport-service-pipeline
 Script Path: jenkins/airport-service-pipeline
 Service Name: airport-service
-<<<<<<< HEAD
-Docker Image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/airport-service
-=======
-Docker Image: amazonId.dkr.ecr.regin.amazonaws.com/airport-service
->>>>>>> 8121d196c7e00c19e383bafff676088fe47d7c5e
+Docker Image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/airport-service
 ```
 
 ### Country Service Pipeline  
@@ -44,11 +32,7 @@ Docker Image: amazonId.dkr.ecr.regin.amazonaws.com/airport-service
 Name: country-service-pipeline
 Script Path: jenkins/country-service-pipeline
 Service Name: country-service
-<<<<<<< HEAD
-Docker Image: ${AWS_ACCOUNT_ID}.dkr.ecr.ap-south-1.amazonaws.com/country-service
-=======
-Docker Image: amazonId.dkr.ecr.regin.amazonaws.com/country-service
->>>>>>> 8121d196c7e00c19e383bafff676088fe47d7c5e
+Docker Image: ${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com/country-service
 ```
 
 ## 📋 Build Parameters
