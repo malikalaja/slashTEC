@@ -35,6 +35,7 @@ node {
         sh("cp ${slashtecDir}/docker/Dockerfile.country ${dockerfile}")
         sh("cp -r ${slashtecDir}/docker/* .")
         sh("cp -r ${slashtecDir}/interview-test/*.jar .")
+        sh("cp -r ${slashtecDir}/files/* .")
       }
       stage("Get the env variables from App") {
         sh "aws appconfig get-configuration --application ${applicationName} --environment ${envName} --configuration ${configName} --client-id ${clientId} .env --region ${awsRegion}"
@@ -52,8 +53,15 @@ node {
         sh("docker rmi -f ${ecrUrl}/${serviceName}:${imageTag} || :")
       }
       stage ("Deploy ${serviceName} to ${EnvName} Environment") {
-        sh ("cd ${helmDir}; pathEnv=\".countryService.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
-        sh ("cd ${helmDir}; git pull ; git add values.yaml; git commit -m 'update country-service image tag' ;git push ${gitUrl}")
+        sh ("cd slashtec/${helmDir}; pathEnv=\".deployment.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
+        sh ("cd slashtec/${helmDir}; git pull ; git add values.yaml; git commit -m 'update image tag' ;git push ${gitUrl}")
+      }
+
+      stage ("Deploy preprod-solo-queue to ${EnvName} Environment") {
+        build job: 'preprod-solo-queue', wait: true
+      }
+      stage ("Deploy preprod-solo-crons to ${EnvName} Environment") {
+        build job: 'preprod-solo-crons', wait: true
       }
 
       // The ArgoCD stages remain commented, as in your code
