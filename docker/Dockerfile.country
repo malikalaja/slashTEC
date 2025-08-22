@@ -24,10 +24,7 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl --fail http://localhost:8080/health/live || exit 1
 
-# Add metadata labels
-LABEL maintainer="Malik <malik@example.com>"
-LABEL version="1.0.1-1-abc123"
-LABEL description="Country Service Application"
+
 
 # Run the application with JVM options
 ENTRYPOINT ["java", "-Djava.security.egd=file:/dev/./urandom", "-Xms256m", "-Xmx512m", "-jar", "/app/country-service.jar"]
