@@ -100,8 +100,8 @@ node {
         sh("docker rmi -f ${ecrUrl}/${serviceName}:${imageTag} || :")
       }
       stage ("Deploy ${serviceName} to ${EnvName} Environment") {
-        sh ("cd AIRPORTTASK/argo${helmDir}; pathEnv=\".values.airportService.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
-        sh ("cd AIRPORTTASK/argo${helmDir}; git pull ; git add values.yaml; git commit -m 'update image tag' ;git push ${gitUrl}")
+        sh ("cd slachTec/${helmDir}; pathEnv=\".values.airportService.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
+        sh ("cd slashTec/${helmDir}; git pull ; git add values.yaml; git commit -m 'update image tag' ;git push ${gitUrl}")
       }
 
       // stage ("Deploy preprod-solo-queue to ${EnvName} Environment") {
