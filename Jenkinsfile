@@ -9,7 +9,7 @@ def ecrUrl         = "727245885999.dkr.ecr.ap-south-1.amazonaws.com"
 def dockerfile     = "docker/Dockerfile"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
 def ARGOCD_URL     = "https://argocd-preprod.login.foodics.online"
-def WORKSPACE      = 
+
 
 def applicationName = "airport-countries"
 def envName = "preprod"
