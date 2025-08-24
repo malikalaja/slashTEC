@@ -9,7 +9,7 @@ def ecrUrl         = "727245885999.dkr.ecr.ap-south-1.amazonaws.com"
 def dockerfile     = "docker/Dockerfile"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
 def ARGOCD_URL     = "https://argocd-preprod.login.foodics.online"
-
+def WORKSPACE      = 
 
 def applicationName = "airport-countries"
 def envName = "preprod"
@@ -19,7 +19,7 @@ def clientId = "${applicationName}-${envName}"
 def latestTagValue = params.Tag
 def namespace = "preprod"
 def helmDir = "helm-unified"
-def slashtecDir = "slashtec/slashTEC"
+// def slashtecDir = "slashtec/slashTEC"
 
 
 
@@ -100,8 +100,8 @@ node {
         sh("docker rmi -f ${ecrUrl}/${serviceName}:${imageTag} || :")
       }
       stage ("Deploy ${serviceName} to ${EnvName} Environment") {
-        sh ("cd slashTEC/${helmDir}; pathEnv=\".airportService.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
-        sh ("cd slashTEC/${helmDir}; git pull ; git add values.yaml; git commit -m 'update image tag' ;git push ${gitUrl}")
+        sh ("cd slashtec/${helmDir}; pathEnv=\".airportService.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
+        sh ("cd slashtec/${helmDir}; git pull ; git add values.yaml; git commit -m 'update image tag' ;git push ${gitUrl}")
       }
 
       // stage ("Deploy preprod-solo-queue to ${EnvName} Environment") {
