@@ -3,7 +3,7 @@
 def branchName     = params.BranchName ?: "main"
 def gitUrl         = "https://github.com/malikalaja/slashTEC.git"
 def gitUrlCode     = "https://github.com/malikalaja/slashTEC.git"
-def serviceType    = params.ServiceType ?: "airport-service" // airport-service or country-service
+def serviceType    = params.ServiceType ?: "airport-service"
 def EnvName        = "preprod"
 def awsAccountId   = env.AWS_ACCOUNT_ID ?: "YOUR_AWS_ACCOUNT_ID_HERE"
 def awsRegion      = env.AWS_DEFAULT_REGION ?: "ap-south-1"
@@ -49,15 +49,12 @@ node {
       slackWebhook = env.SLACK_WEBHOOK
     }
   } catch (Exception e) {
-    echo "ℹ️  INFO: Slack webhook credentials not found, continuing without notifications"
-    echo "ℹ️  To enable Slack notifications, add 'slack-webhook-credentials' to Jenkins"
+    // Slack credentials not configured, continuing without notifications
   }
   
   try {
     if (awsAccountId == "YOUR_AWS_ACCOUNT_ID_HERE") {
-      echo "⚠️  WARNING: AWS_ACCOUNT_ID environment variable not set in Jenkins!"
-      echo "⚠️  Please configure environment variables in Jenkins → Manage Jenkins → Configure System → Global Properties"
-      echo "⚠️  Pipeline will fail at ECR login step without proper AWS credentials."
+      error "AWS_ACCOUNT_ID environment variable not configured. Please configure AWS credentials in Jenkins."
     }
     
     notifyBuild('STARTED', "Building ${config.serviceName}", slackWebhook)
@@ -167,15 +164,11 @@ def notifyBuild(String buildStatus = 'STARTED', String serviceName = '', String 
 
     try {
         if (slackWebhook) {
-            echo "📢 Sending Slack notification: ${summary}"
             sh """
             curl -X POST -H 'Content-type: application/json' \
             --data '{"text":"${summary}"}' \
             ${slackWebhook}
             """
-        } else {
-            echo "📝 Build notification: ${summary}"
-            echo "ℹ️  Slack webhook not configured, skipping notification"
         }
     } catch (Exception e) {
         echo "Failed to send Slack notification: ${e.message}"
