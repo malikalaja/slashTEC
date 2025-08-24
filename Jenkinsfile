@@ -5,8 +5,6 @@ def gitUrl         = "https://github.com/malikalaja/slashTEC.git"
 def gitUrlCode     = "https://github.com/malikalaja/slashTEC.git"
 def serviceType    = params.ServiceType ?: "airport-service" // airport-service or country-service
 def EnvName        = "preprod"
-
-// Safely get environment variables with fallbacks
 def awsAccountId   = env.AWS_ACCOUNT_ID ?: "YOUR_AWS_ACCOUNT_ID_HERE"
 def awsRegion      = env.AWS_DEFAULT_REGION ?: "ap-south-1"
 def registryId     = awsAccountId
@@ -15,7 +13,6 @@ def imageTag       = "${EnvName}-${BUILD_NUMBER}"
 def ARGOCD_URL     = env.ARGOCD_SERVER_URL ?: "https://argocd-preprod.login.foodics.online"
 def JENKINS_URL    = env.JENKINS_SERVER_URL ?: "http://13.203.7.135/"
 
-// Service-specific configuration
 def getServiceConfig(serviceType) {
     def config = [:]
     
@@ -45,16 +42,25 @@ def config = getServiceConfig(serviceType)
 def latestTagValue = params.Tag
 
 node {
-  withCredentials([string(credentialsId: 'slack-webhook-credentials', variable: 'SLACK_WEBHOOK')]) {
-    try {
-      // Check for missing environment variables
-      if (awsAccountId == "YOUR_AWS_ACCOUNT_ID_HERE") {
-        echo "⚠️  WARNING: AWS_ACCOUNT_ID environment variable not set in Jenkins!"
-        echo "⚠️  Please configure environment variables in Jenkins → Manage Jenkins → Configure System → Global Properties"
-        echo "⚠️  Pipeline will fail at ECR login step without proper AWS credentials."
-      }
-      
-      notifyBuild('STARTED', "Building ${config.serviceName}")
+  // Try to get Slack credentials if they exist, otherwise continue without them
+  def slackWebhook = null
+  try {
+    withCredentials([string(credentialsId: 'slack-webhook-credentials', variable: 'SLACK_WEBHOOK')]) {
+      slackWebhook = env.SLACK_WEBHOOK
+    }
+  } catch (Exception e) {
+    echo "ℹ️  INFO: Slack webhook credentials not found, continuing without notifications"
+    echo "ℹ️  To enable Slack notifications, add 'slack-webhook-credentials' to Jenkins"
+  }
+  
+  try {
+    if (awsAccountId == "YOUR_AWS_ACCOUNT_ID_HERE") {
+      echo "⚠️  WARNING: AWS_ACCOUNT_ID environment variable not set in Jenkins!"
+      echo "⚠️  Please configure environment variables in Jenkins → Manage Jenkins → Configure System → Global Properties"
+      echo "⚠️  Pipeline will fail at ECR login step without proper AWS credentials."
+    }
+    
+    notifyBuild('STARTED', "Building ${config.serviceName}", slackWebhook)
       
       stage('cleanup') {
         cleanWs()
@@ -130,12 +136,12 @@ node {
       echo "Exception message: ${e.message ?: 'No message'}"
       throw e
     } finally {
-      notifyBuild(currentBuild.result, "Finished ${config.serviceName}")
+      notifyBuild(currentBuild.result, "Finished ${config.serviceName}", slackWebhook)
     }
   }
 }
 
-def notifyBuild(String buildStatus = 'STARTED', String serviceName = '') {
+def notifyBuild(String buildStatus = 'STARTED', String serviceName = '', String slackWebhook = null) {
     buildStatus = buildStatus ?: 'SUCCESS'
 
     def colorName = 'RED'
@@ -161,12 +167,16 @@ def notifyBuild(String buildStatus = 'STARTED', String serviceName = '') {
     ]
 
     try {
-        if (env.SLACK_WEBHOOK) {
+        if (slackWebhook) {
+            echo "📢 Sending Slack notification: ${summary}"
             sh """
             curl -X POST -H 'Content-type: application/json' \
             --data '{"text":"${summary}"}' \
-            ${env.SLACK_WEBHOOK}
+            ${slackWebhook}
             """
+        } else {
+            echo "📝 Build notification: ${summary}"
+            echo "ℹ️  Slack webhook not configured, skipping notification"
         }
     } catch (Exception e) {
         echo "Failed to send Slack notification: ${e.message}"
