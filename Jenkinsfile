@@ -78,7 +78,13 @@ node {
       }
       
       stage("Get the env variables from App") {
-        sh "aws appconfig get-configuration --application ${config.applicationName} --environment ${config.envName} --configuration ${config.configName} --client-id ${config.clientId} .env --region ${awsRegion}"
+        // Temporarily skip AppConfig - create .env with defaults for testing
+        sh """
+        echo 'DATABASE_URL=jdbc:postgresql://localhost:5432/airport_db' > .env
+        echo 'API_ENVIRONMENT=preprod' >> .env
+        echo 'LOG_LEVEL=INFO' >> .env
+        echo 'AppConfig stage skipped - using default configuration for testing'
+        """
       }
       
       stage('login to ecr') {
