@@ -42,7 +42,7 @@ def config = getServiceConfig(serviceType)
 def latestTagValue = params.Tag
 
 node {
-  // Try to get Slack credentials if they exist, otherwise continue without them
+  
   def slackWebhook = null
   try {
     withCredentials([string(credentialsId: 'slack-webhook-credentials', variable: 'SLACK_WEBHOOK')]) {
@@ -61,8 +61,8 @@ node {
     }
     
     notifyBuild('STARTED', "Building ${config.serviceName}", slackWebhook)
-      
-      stage('cleanup') {
+    
+    stage('cleanup') {
         cleanWs()
       }
       
