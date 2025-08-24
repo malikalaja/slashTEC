@@ -138,7 +138,6 @@ node {
     } finally {
       notifyBuild(currentBuild.result, "Finished ${config.serviceName}", slackWebhook)
     }
-  }
 }
 
 def notifyBuild(String buildStatus = 'STARTED', String serviceName = '', String slackWebhook = null) {
