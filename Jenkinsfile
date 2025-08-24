@@ -61,8 +61,25 @@ node {
     
     notifyBuild('STARTED', "Building ${config.serviceName}", slackWebhook)
     
-    stage('cleanup') {
+          stage('cleanup') {
         cleanWs()
+      }
+      
+      stage('Check Tools') {
+        sh """
+        echo "=== TOOL AVAILABILITY CHECK ==="
+        echo "Git version:" 
+        git --version || echo "❌ Git not found"
+        echo "AWS CLI version:"
+        aws --version || echo "❌ AWS CLI not found"
+        echo "Docker version:"
+        docker --version || echo "❌ Docker not found"
+        echo "YQ version:"
+        yq --version || echo "❌ YQ not found"
+        echo "Java version:"
+        java -version || echo "❌ Java not found"
+        echo "=== END TOOL CHECK ==="
+        """
       }
       
       stage ("Get the app code") {
