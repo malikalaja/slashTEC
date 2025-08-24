@@ -124,7 +124,18 @@ node {
       
       stage ("Deploy ${config.serviceName} to ${EnvName} Environment") {
         sh ("cd ${config.slashtecDir}/${config.helmDir}; pathEnv=\".deployment.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
-        sh ("cd ${config.slashtecDir}/${config.helmDir}; git pull ; git add values.yaml; git commit -m 'update ${config.serviceName} image tag to ${imageTag}' ;git push ${gitUrl}")
+        withCredentials([usernamePassword(credentialsId: 'github-credentials', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_PASSWORD')]) {
+          sh """
+          cd ${config.slashtecDir}/${config.helmDir}
+          git config user.name "Jenkins CI"
+          git config user.email "jenkins@example.com"
+          git remote set-url origin https://\${GIT_USERNAME}:\${GIT_PASSWORD}@github.com/malikalaja/slashTEC.git
+          git pull origin main
+          git add values.yaml
+          git commit -m 'update ${config.serviceName} image tag to ${imageTag}' || echo 'No changes to commit'
+          git push origin main
+          """
+        }
       }
 
       
