@@ -131,9 +131,10 @@ node {
           echo "Dockerfile: ${dockerfile}"
           echo "Available JAR files in interview-test/:"
           ls -la interview-test/*.jar || echo "No JAR files found"
+          echo "Using airports-assembly-1.1.0.jar for Docker build"
           
           echo "Preparing Docker build context..."
-          cp interview-test/*.jar docker/ || echo "Warning: No JAR files copied"
+          cp interview-test/airports-assembly-1.1.0.jar docker/app.jar || echo "Warning: No JAR files copied"
           
           echo "Files in docker directory:"
           ls -la docker/
