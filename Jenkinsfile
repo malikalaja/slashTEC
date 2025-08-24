@@ -20,10 +20,12 @@ def getServiceConfig(serviceType) {
         config.serviceName = "airport-service"
         config.dockerfile = "docker/Dockerfile"
         config.applicationName = "airport-services"
+        config.jarFileName = "airports-assembly-1.1.0.jar"
     } else if (serviceType == "country-service") {
         config.serviceName = "country-service" 
         config.dockerfile = "docker/Dockerfile.country"
         config.applicationName = "airport-services"
+        config.jarFileName = "countries-assembly-1.0.1.jar"
     } else {
         error "Unknown service type: ${serviceType}. Must be 'airport-service' or 'country-service'"
     }
@@ -71,7 +73,7 @@ node {
         
         sh("cp ${config.slashtecDir}/${config.dockerfile} ${config.dockerfile}")
         sh("cp -r ${config.slashtecDir}/docker/* .")
-        sh("cp -r ${config.slashtecDir}/interview-test/*.jar .")
+        sh("cp ${config.slashtecDir}/interview-test/${config.jarFileName} app.jar")
         
       
         sh("[ -d ${config.slashtecDir}/files ] && cp -r ${config.slashtecDir}/files/* . || echo 'No files directory found'")
