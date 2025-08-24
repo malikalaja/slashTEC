@@ -5,12 +5,15 @@ def gitUrl         = "https://github.com/malikalaja/slashTEC.git"
 def gitUrlCode     = "https://github.com/malikalaja/slashTEC.git"
 def serviceType    = params.ServiceType ?: "airport-service" // airport-service or country-service
 def EnvName        = "preprod"
-def registryId     = "${AWS_ACCOUNT_ID}"
-def awsRegion      = "ap-south-1"
-def ecrUrl         = "${AWS_ACCOUNT_ID}.dkr.ecr.${awsRegion}.amazonaws.com"
+
+// Safely get environment variables with fallbacks
+def awsAccountId   = env.AWS_ACCOUNT_ID ?: "YOUR_AWS_ACCOUNT_ID_HERE"
+def awsRegion      = env.AWS_DEFAULT_REGION ?: "ap-south-1"
+def registryId     = awsAccountId
+def ecrUrl         = "${awsAccountId}.dkr.ecr.${awsRegion}.amazonaws.com"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
-def ARGOCD_URL     = "${ARGOCD_SERVER_URL}"
-def JENKINS_URL    = "${JENKINS_SERVER_URL}"
+def ARGOCD_URL     = env.ARGOCD_SERVER_URL ?: "https://argocd-preprod.login.foodics.online"
+def JENKINS_URL    = env.JENKINS_SERVER_URL ?: "http://13.203.7.135/"
 
 // Service-specific configuration
 def getServiceConfig(serviceType) {
@@ -44,6 +47,13 @@ def latestTagValue = params.Tag
 node {
   withCredentials([string(credentialsId: 'slack-webhook-credentials', variable: 'SLACK_WEBHOOK')]) {
     try {
+      // Check for missing environment variables
+      if (awsAccountId == "YOUR_AWS_ACCOUNT_ID_HERE") {
+        echo "⚠️  WARNING: AWS_ACCOUNT_ID environment variable not set in Jenkins!"
+        echo "⚠️  Please configure environment variables in Jenkins → Manage Jenkins → Configure System → Global Properties"
+        echo "⚠️  Pipeline will fail at ECR login step without proper AWS credentials."
+      }
+      
       notifyBuild('STARTED', "Building ${config.serviceName}")
       
       stage('cleanup') {
@@ -55,12 +65,12 @@ node {
         sh "rm -rf ~/workspace/\"${JOB_NAME}\"/slashtec"
         sh "mkdir ~/workspace/\"${JOB_NAME}\"/slashtec ; cd slashtec ; git clone -b main ${gitUrl} "
         
-        // Copy the appropriate Dockerfile based on service type
+        
         sh("cp ${config.slashtecDir}/${config.dockerfile} ${config.dockerfile}")
         sh("cp -r ${config.slashtecDir}/docker/* .")
         sh("cp -r ${config.slashtecDir}/interview-test/*.jar .")
         
-        // Copy files if directory exists
+      
         sh("[ -d ${config.slashtecDir}/files ] && cp -r ${config.slashtecDir}/files/* . || echo 'No files directory found'")
       }
       
@@ -89,7 +99,7 @@ node {
         sh ("cd slashtec/${config.helmDir}; git pull ; git add values.yaml; git commit -m 'update ${config.serviceName} image tag to ${imageTag}' ;git push ${gitUrl}")
       }
 
-      // Deploy additional services if this is airport-service (primary service)
+      
       if (config.serviceName == "airport-service") {
         stage ("Deploy preprod-solo-queue to ${EnvName} Environment") {
           build job: 'preprod-solo-queue', wait: true
@@ -106,7 +116,7 @@ node {
           build job: env.JOB_NAME, parameters: [
             string(name: 'ServiceType', value: otherService),
             string(name: 'BranchName', value: branchName),
-            booleanParam(name: 'BUILD_BOTH_SERVICES', value: false) // Prevent infinite loop
+            booleanParam(name: 'BUILD_BOTH_SERVICES', value: false) 
           ], wait: false
         }
       }
