@@ -7,10 +7,6 @@ type: application
 version: 0.1.0
 appVersion: "1.0.1"
 
-maintainers:
-  - name: SlashTEC DevOps Team
-    email: devops@yourcompany.com
-
 keywords:
   - airport
   - country
