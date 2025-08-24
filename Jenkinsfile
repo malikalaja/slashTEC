@@ -5,78 +5,26 @@ def serviceName    = "airport-service"
 def EnvName        = "preprod"
 def registryId     = "${AWS_ACCOUNT_ID}"
 def awsRegion      = "ap-south-1"
-def ecrUrl         = "727245885999.dkr.ecr.ap-south-1.amazonaws.com/airport-service"
+def ecrUrl         = "727245885999.dkr.ecr.ap-south-1.amazonaws.com/airports"
 def dockerfile     = "docker/Dockerfile"
 def imageTag       = "${EnvName}-${BUILD_NUMBER}"
 def ARGOCD_URL     = "https://argocd-preprod.login.foodics.online"
 
-// AppConfig Params
+
 def applicationName = "airport-countries"
 def envName = "preprod"
 def configName = "preprod"
-// Fix: Use string concatenation, not arithmetic
+
 def clientId = "${applicationName}-${envName}"
 def latestTagValue = params.Tag
 def namespace = "preprod"
 def helmDir = "helm-unified"
 def slashtecDir = "slashtec/slashTEC"
 
-def notifyBuild(String buildStatus = 'STARTED', String branch = 'main') {
-  buildStatus =  buildStatus ?: 'SUCCESS'
-  
-  String color = 'good'
-  String summary = "${buildStatus}: ${env.JOB_NAME} - ${env.BUILD_NUMBER}"
-  
-  if (buildStatus == 'STARTED') {
-    color = 'warning'
-  } else if (buildStatus == 'FAILURE') {
-    color = 'danger'
-  }
-  
-  String slackMessage = """
-  {
-    "attachments": [
-      {
-        "color": "${color}",
-        "fields": [
-          {
-            "title": "Build Status",
-            "value": "${summary}",
-            "short": false
-          },
-          {
-            "title": "Branch",
-            "value": "${branch}",
-            "short": true
-          },
-          {
-            "title": "Build URL",
-            "value": "${env.BUILD_URL}",
-            "short": false
-          }
-        ]
-      }
-    ]
-  }
-  """
-  
-  try {
-    withCredentials([string(credentialsId: 'foodics-slack-online-deployments', variable: 'SLACK_WEBHOOK')]) {
-      httpRequest(
-        url: env.SLACK_WEBHOOK,
-        httpMode: 'POST',
-        contentType: 'APPLICATION_JSON',
-        requestBody: slackMessage
-      )
-    }
-  } catch (Exception e) {
-    echo "Slack notification skipped: ${e.getMessage()}"
-  }
-}
+
 
 node {
   try {
-    notifyBuild('STARTED', branchName)
       stage('cleanup') {
         cleanWs()
       }
@@ -166,7 +114,7 @@ node {
       currentBuild.result = 'FAILURE'
       throw e
     } finally {
-      notifyBuild(currentBuild.result ?: 'SUCCESS', branchName)
+      // Slack notifications removed
     }
 }
 
