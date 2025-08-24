@@ -45,21 +45,10 @@ def latestTagValue = params.Tag
 
 node {
   
-  def slackWebhook = null
-  try {
-    withCredentials([string(credentialsId: 'slack-webhook-credentials', variable: 'SLACK_WEBHOOK')]) {
-      slackWebhook = env.SLACK_WEBHOOK
-    }
-  } catch (Exception e) {
-    // Slack credentials not configured, continuing without notifications
-  }
-  
   try {
     if (awsAccountId == "YOUR_AWS_ACCOUNT_ID_HERE") {
       error "AWS_ACCOUNT_ID environment variable not configured. Please configure AWS credentials in Jenkins."
     }
-    
-    notifyBuild('STARTED', "Building ${config.serviceName}", slackWebhook)
     
           stage('cleanup') {
         cleanWs()
@@ -168,45 +157,7 @@ node {
       echo "Exception type: ${e.getClass().getName()}"
       echo "Exception message: ${e.message ?: 'No message'}"
       throw e
-    } finally {
-      notifyBuild(currentBuild.result, "Finished ${config.serviceName}", slackWebhook)
-    }
+  }
 }
 
-def notifyBuild(String buildStatus = 'STARTED', String serviceName = '', String slackWebhook = null) {
-    buildStatus = buildStatus ?: 'SUCCESS'
 
-    def colorName = 'RED'
-    def colorCode = '#FF0000'
-    def subject = "${buildStatus}: Job '${env.JOB_NAME} [${env.BUILD_NUMBER}]' ${serviceName}"
-    def summary = "${subject} (${env.BUILD_URL})"
-
-    if (buildStatus == 'STARTED') {
-        color = 'YELLOW'
-        colorCode = '#FFFF00'
-    } else if (buildStatus == 'SUCCESS') {
-        color = 'GREEN'
-        colorCode = '#00FF00'
-    } else {
-        color = 'RED'
-        colorCode = '#FF0000'
-    }
-
-    def slackMessage = [
-        channel: '#deployments',
-        color: colorCode,
-        message: summary
-    ]
-
-    try {
-        if (slackWebhook) {
-            sh """
-            curl -X POST -H 'Content-type: application/json' \
-            --data '{"text":"${summary}"}' \
-            ${slackWebhook}
-            """
-        }
-    } catch (Exception e) {
-        echo "Failed to send Slack notification: ${e.message}"
-    }
-}
