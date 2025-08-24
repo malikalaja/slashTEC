@@ -33,7 +33,7 @@ def getServiceConfig(serviceType) {
     config.clientId = "${config.applicationName}-${config.envName}"
     config.namespace = "preprod"
     config.helmDir = "helm-unified"
-    config.slashtecDir = "slashtec"
+    config.slashtecDir = "slashtec/slashTEC"
     
     return config
 }
@@ -101,8 +101,8 @@ node {
       }
       
       stage ("Deploy ${config.serviceName} to ${EnvName} Environment") {
-        sh ("cd slashtec/${config.helmDir}; pathEnv=\".deployment.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
-        sh ("cd slashtec/${config.helmDir}; git pull ; git add values.yaml; git commit -m 'update ${config.serviceName} image tag to ${imageTag}' ;git push ${gitUrl}")
+        sh ("cd ${config.slashtecDir}/${config.helmDir}; pathEnv=\".deployment.image.tag\" valueEnv=\"${imageTag}\" yq 'eval(strenv(pathEnv)) = strenv(valueEnv)' -i values.yaml ; cat values.yaml")
+        sh ("cd ${config.slashtecDir}/${config.helmDir}; git pull ; git add values.yaml; git commit -m 'update ${config.serviceName} image tag to ${imageTag}' ;git push ${gitUrl}")
       }
 
       
